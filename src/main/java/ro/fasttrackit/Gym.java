@@ -17,11 +17,15 @@ public class Gym {
         this.subscriptions = new HashMap<>();
     }
 
-    public Map<GymMember, Duration> assignTime(String memberName, int time) {
-        GymMember key = findMemberByName(memberName);
-        Duration value = Duration.ofHours(time);
-        subscriptions.put(key, value);
-        return subscriptions;
+    public void registerTime(GymMember member, Duration duration) {
+        if (subscriptions.containsKey(member)) {
+            Duration currentRemainingTime = subscriptions.get(member);
+            Duration newRemainingTime = currentRemainingTime.plus(duration);
+            subscriptions.put(member, newRemainingTime);
+        } else {
+            subscriptions.put(member, duration);
+        }
+        generateReport();
     }
 
     public Double averageAgeOfMembers() {
@@ -51,6 +55,13 @@ public class Gym {
             time = value.toHours();
         }
         return time;
+    }
+
+    public Map<GymMember, Duration> addTime(String memberName, int time) {
+        GymMember key = findMemberByName(memberName);
+        Duration value = Duration.ofHours(time);
+        subscriptions.put(key, value);
+        return subscriptions;
     }
 
     public String informationAboutMember(String memberName) {
