@@ -6,6 +6,7 @@ import java.io.Writer;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.*;
 
 public class Gym {
@@ -18,12 +19,12 @@ public class Gym {
     }
 
     public void registerTime(GymMember member, Duration duration) {
-        if (subscriptions.containsKey(member)) {
+        if (subscriptions.get(member).toHours() > duration.toHours()) {
             Duration currentRemainingTime = subscriptions.get(member);
-            Duration newRemainingTime = currentRemainingTime.plus(duration);
+            Duration newRemainingTime = currentRemainingTime.minus(duration);
             subscriptions.put(member, newRemainingTime);
         } else {
-            subscriptions.put(member, duration);
+            System.err.printf("%s needs to extend the subscription%n", member.name());
         }
         generateReport();
     }
@@ -40,19 +41,19 @@ public class Gym {
     public Optional<GymMember> maximumAgeOfMembers() {
         int presentYear = LocalDateTime.now().getYear();
         return members.stream()
-                .max((m1, m2) -> m1.birthdate().compareTo(m2.birthdate()));
+                .min((m1, m2) -> m1.birthdate().compareTo(m2.birthdate()));
     }
 
     public Optional<GymMember> minimumAgeOfMembers() {
         int presentYear = LocalDateTime.now().getYear();
         return members.stream()
-                .min((m1, m2) -> m1.birthdate().compareTo(m2.birthdate()));
+                .max((m1, m2) -> m1.birthdate().compareTo(m2.birthdate()));
     }
 
     public long totalRemainingTime() {
         long time = 0;
         for (Duration value : subscriptions.values()) {
-            time = value.toHours();
+            time += value.toHours();
         }
         return time;
     }
@@ -77,7 +78,7 @@ public class Gym {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid name or no user named: " + memberName));
     }
 
-    private void generateReport() {
+    public void generateReport() {
         List<String> red = new ArrayList<>();
         List<String> yellow = new ArrayList<>();
         List<String> green = new ArrayList<>();
@@ -90,7 +91,10 @@ public class Gym {
                 green.add(k.name());
         });
 
-        try (Writer writer = new FileWriter(String.valueOf(Path.of("src/main/resources/remaining-time-report-%s".formatted(String.valueOf(LocalDateTime.now())))))) {
+        String fileName = String.valueOf(LocalDateTime.now()).replaceAll(":", "_");
+        String path = "src/main/resources/remaining-time-report-" + fileName + ".txt";
+
+        try (Writer writer = new FileWriter(path)) {
             writer.write("RED: %s".formatted(red));
             writer.write("\n");
             writer.write("YELLOW: %s".formatted(yellow));
